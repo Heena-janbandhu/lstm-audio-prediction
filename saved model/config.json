@@ -1,0 +1,8 @@
+{
+  "target_sr": 16000,
+  "n_mfcc": 13,
+  "hop_length": 512,
+  "n_fft": 2048,
+  "seq_len": 20,
+  "pred_len": 5
+}
