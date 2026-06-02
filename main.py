@@ -67,14 +67,17 @@ class HealthResponse(BaseModel):
 # ── Helpers ────────────────────────────────────────────────────────────
 def extract_mfcc(audio_bytes: bytes, filename: str):
     cfg = get_config()
-    suffix = Path(filename).suffix or ".wav"
+    suffix = Path(filename).suffix.lower() or ".wav"
+    # Treat mpeg/mp4/m4a as mp3 — librosa can decode them via soundfile/ffmpeg
+    if suffix in (".mpeg", ".mp4", ".m4a", ".aac"):
+        suffix = ".mp3"
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
         tmp.write(audio_bytes)
         tmp_path = tmp.name
     try:
         y, sr = librosa.load(tmp_path, sr=cfg["target_sr"], mono=True)
     except Exception as e:
-        raise HTTPException(status_code=422, detail=f"Cannot decode audio: {e}")
+        raise HTTPException(status_code=422, detail=f"Cannot decode audio file '{filename}'. Try converting to WAV or MP3. Error: {e}")
     finally:
         Path(tmp_path).unlink(missing_ok=True)
 
@@ -482,7 +485,7 @@ HOMEPAGE = """<!DOCTYPE html>
 
 <div class="container">
   <header>
-    <div class="badge">⚡ LIVE · LAB ASSIGNMENT 5</div>
+    <div class="badge">⚡ Test your audio files </div>
     <h1>LSTM <span>Audio</span><br>Sequence Predictor</h1>
     <p class="subtitle">Upload an audio clip and watch the LSTM predict the next 5 MFCC frames using deep sequence learning.</p>
     <div class="header-links">
