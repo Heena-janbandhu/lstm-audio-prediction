@@ -1,89 +1,79 @@
-# 🎵 LSTM Audio Sequence Prediction — FastAPI on Render
+# 🎵 LSTM Audio Sequence Predictor
 
-> Lab Assignment 5 | Audio Prediction | Deployment: FastAPI + Render.com
+>  Deep Learning | FastAPI Deployment | Render.com
+
+[![Live API](https://img.shields.io/badge/API-Live-brightgreen)](https://lstm-audio-prediction.onrender.com)
+[![Docs](https://img.shields.io/badge/Swagger-Docs-blue)](https://lstm-audio-prediction.onrender.com/docs)
+[![Python](https://img.shields.io/badge/Python-3.11-yellow)](https://python.org)
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.17-orange)](https://tensorflow.org)
 
 ---
 
-## Dataset Declaration
+## 📌 Links
+
+| Resource | URL |
+|----------|-----|
+| 🌐 **Live API** | https://lstm-audio-prediction.onrender.com |
+| 📖 **Swagger UI** | https://lstm-audio-prediction.onrender.com/docs |
+
+---
+
+## 📊 Dataset
 
 | Field | Details |
 |-------|---------|
-| **Name** | Mozilla Common Voice 11.0 (English) |
-| **Source** | https://huggingface.co/datasets/mozilla-foundation/common_voice_11_0 |
-| **Description** | Crowd-sourced speech recordings. 13 MFCC features extracted per audio frame. |
-| **Preprocessing** | Resample → 16kHz → Extract MFCCs → MinMaxScaler normalize → Sliding window (20 in, 5 out) |
+| **Name** | UrbanSound8K (via Hugging Face) |
+| **Source** | `danavery/urbansound8K` |
+| **Description** | Urban sound recordings across 10 classes (sirens, engines, music, etc.) |
+| **Samples Used** | 500 audio clips for training |
+| **Preprocessing** | Resample → 16kHz → 13 MFCCs → MinMaxScaler → Sliding window (20 in, 5 out) |
 
 ---
 
-## Project Structure
-
-```
-lstm-audio-prediction/
-├── main.py                     # FastAPI application
-├── requirements.txt            # Python dependencies
-├── render.yaml                 # Render deployment config
-├── LSTM_Audio_Prediction.ipynb # Colab training notebook
-├── saved_model/                # Generated after training
-│   ├── lstm_audio_model.keras
-│   ├── scaler.pkl
-│   └── config.json
-└── README.md
-```
-
----
-
-## LSTM Mathematical Model
-
-**Forget gate** — what to erase from memory:
-```
-f_t = σ(W_f · [h_{t-1}, x_t] + b_f)
-```
-
-**Input gate** — what new info to add:
-```
-i_t = σ(W_i · [h_{t-1}, x_t] + b_i)
-C̃_t = tanh(W_C · [h_{t-1}, x_t] + b_C)
-```
-
-**Cell state update** (long-term memory):
-```
-C_t = f_t ⊙ C_{t-1}  +  i_t ⊙ C̃_t
-```
-
-**Output gate** — what to expose as output:
-```
-o_t = σ(W_o · [h_{t-1}, x_t] + b_o)
-h_t = o_t ⊙ tanh(C_t)
-```
-
----
-
-## Model Architecture
+## 🧠 Model Architecture
 
 ```
 Input  (20, 13)  ← 20 MFCC frames × 13 coefficients
-  ↓
-LSTM(128, return_sequences=True) + BatchNorm
-  ↓
-LSTM(64) + BatchNorm
-  ↓
-Dense(128, relu) + Dropout(0.3)
-  ↓
-Dense(65, linear)  ← predicts 5 frames × 13 MFCCs
+        ↓
+  LSTM(128, return_sequences=True)
+  BatchNormalization + Dropout(0.2)
+        ↓
+  LSTM(64)
+  BatchNormalization + Dropout(0.2)
+        ↓
+  Dense(128, activation='relu')
+  Dropout(0.3)
+        ↓
+  Dense(65, activation='linear')   ← predicts 5 frames × 13 MFCCs
 ```
+
+### LSTM Gate Equations
+
+| Gate | Formula |
+|------|---------|
+| **Forget** | $f_t = \sigma(W_f \cdot [h_{t-1}, x_t] + b_f)$ |
+| **Input** | $i_t = \sigma(W_i \cdot [h_{t-1}, x_t] + b_i)$ |
+| **Cell** | $C_t = f_t \odot C_{t-1} + i_t \odot \tilde{C}_t$ |
+| **Output** | $h_t = o_t \odot \tanh(C_t)$ |
 
 ---
 
-## API Reference
+## 🚀 API Reference
 
-### GET /health
+### `GET /`
+Returns status message and docs link.
+
+### `GET /health`
 ```json
 { "status": "ok", "model_ready": true }
 ```
 
-### POST /predict
-- **Input:** multipart audio file (WAV / MP3 / OGG)
-- **Output:**
+### `POST /predict`
+Upload an audio file (WAV / MP3 / OGG) and receive predicted MFCC frames.
+
+**Request:** `multipart/form-data` with a `file` field.
+
+**Response:**
 ```json
 {
   "predicted_frames": [[...13 values...], ...5 frames],
@@ -94,39 +84,47 @@ Dense(65, linear)  ← predicts 5 frames × 13 MFCCs
 }
 ```
 
-**Live API:** `https://YOUR-APP-NAME.onrender.com`  
-**Swagger docs:** `https://YOUR-APP-NAME.onrender.com/docs`
+---
+
+## 📁 Project Structure
+
+```
+lstm-audio-prediction/
+├── main.py                      # FastAPI application
+├── requirements.txt             # Python dependencies
+├── render.yaml                  # Render deployment config
+├── .python-version              # Pins Python 3.11
+├── LSTM_Audio_Prediction.ipynb  # Colab training notebook
+├── saved_model/
+│   ├── lstm_audio_model.keras   # Trained LSTM model
+│   ├── scaler.pkl               # MinMaxScaler
+│   └── config.json              # Audio processing config
+└── README.md
+```
 
 ---
 
-## Deployment
+## 🛠️ Local Setup
 
-Deployed on **Render.com** (free tier) using `render.yaml`.  
-Auto-deploys on every push to the `main` branch.
-
----
-
-## Submission
-
-- **Colab Link:** ___________________________
-- **GitHub Repo:** ___________________________
-- **Live API URL:** ___________________________
+```bash
+git clone https://github.com/your_username/lstm-audio-prediction
+cd lstm-audio-prediction
+pip install -r requirements.txt
+uvicorn main:app --reload
+# Visit http://localhost:8000/docs
+```
 
 ---
 
-## Team Contributions
+## ☁️ Deployment
 
-| Member | Contribution |
-|--------|-------------|
-| Member 1 | Dataset collection, MFCC preprocessing |
-| Member 2 | LSTM model design and training |
-| Member 3 | FastAPI deployment, Render setup |
-| Member 4 | Testing, documentation, GitHub |
+Deployed on **Render.com** free tier using `render.yaml`.
+Auto-deploys on every push to `main` branch.
 
----
 
-## AI Tool Acknowledgement
+## 🤖 AI Tool Acknowledgement
 
-| Tool | Purpose | Sections |
-|------|---------|---------|
-| Claude (Anthropic) | Code scaffolding, README template | Notebook structure, API boilerplate, README |
+| Tool | Purpose |
+|------|---------|
+| Claude (Anthropic) | Code scaffolding, debugging, README |
+| Google Colab | Model training environment |
